@@ -7,6 +7,8 @@ import emailConfig from '../../config/email.config';
 import { EmailService } from './email.service';
 import { EmailProcessor } from './queues/email.processor/email.processor';
 import { EmailController } from './email.controller';
+import { LogService } from './log.service';
+import { EQueueName } from './enum';
 
 @Module({
   imports: [
@@ -24,9 +26,9 @@ import { EmailController } from './email.controller';
       }),
       inject: [redisConfig.KEY],
     }),
-    BullModule.registerQueue({ name: 'email' }),
+    BullModule.registerQueue({ name: EQueueName.EMAIL }),
   ],
   controllers: [EmailController],
-  providers: [EmailService, EmailProcessor],
+  providers: [EmailService, EmailProcessor, LogService],
 })
 export class EmailModule {}

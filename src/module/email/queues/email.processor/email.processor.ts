@@ -1,55 +1,44 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 
 import { Inject, Injectable } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
-import nodemailer from 'nodemailer';
+// import nodemailer from 'nodemailer';
 
 import { EEmailStatus } from '@prisma/client';
 import { PrismaService } from '../../../../global/prisma/prisma.service';
 import emailConfig from '../../../../config/email.config';
+import { EQueueName } from '../../enum';
+import { EJobName } from '../../enum';
+import { IEmailJob } from '../../interfaces';
+import { EmailService } from '../../email.service';
 
 @Injectable()
-@Processor('email')
+@Processor(EQueueName.EMAIL)
 export class EmailProcessor extends WorkerHost {
-  private transporter: nodemailer.Transporter;
-
   constructor(
     private readonly prisma: PrismaService,
     @Inject(emailConfig.KEY)
     private readonly cfg: ConfigType<typeof emailConfig>,
+    private readonly emailService: EmailService,
   ) {
     super();
-
-    this.transporter = nodemailer.createTransport({
-      host: cfg.smtp.host,
-      port: cfg.smtp.port,
-      secure: cfg.smtp.secure,
-      auth: { user: cfg.smtp.user, pass: cfg.smtp.pass },
-    });
   }
 
   // BullMQ-style processor: handle all jobs here
-  async process(
-    job: Job<{ to: string; subject: string; body: string }>,
-  ): Promise<void> {
-    if (job.name !== 'send') return;
+  async process(job: Job<IEmailJob>): Promise<void> {
+    if ((job.name as EJobName) !== EJobName.SEND) return;
 
-    const { to, subject, body } = job.data;
+    const { to, subject, body, logId } = job.data;
 
     try {
-      await this.transporter.sendMail({
-        from: this.cfg.smtp.user,
+      await this.emailService.sendEmail({
         to,
         subject,
-        text: body,
+        body,
       });
-
       await this.prisma.emailLog.updateMany({
-        where: { to, subject, body, status: EEmailStatus.PENDING },
+        where: { id: logId, to, subject, body, status: EEmailStatus.PENDING },
         data: {
           status: EEmailStatus.SENT,
           sentAt: new Date(),
@@ -58,7 +47,7 @@ export class EmailProcessor extends WorkerHost {
       });
     } catch (err: unknown) {
       await this.prisma.emailLog.updateMany({
-        where: { to, subject, body, status: EEmailStatus.PENDING },
+        where: { id: logId, to, subject, body, status: EEmailStatus.PENDING },
         data: {
           status: EEmailStatus.FAILED,
           failedAt: new Date(),
