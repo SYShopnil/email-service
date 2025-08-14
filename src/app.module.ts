@@ -34,7 +34,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
       },
     }),
 
-    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]), // sensible defaults
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
 
     PrismaModule,
     EmailModule,
