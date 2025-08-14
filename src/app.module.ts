@@ -1,0 +1,45 @@
+import { Module } from '@nestjs/common';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+import { PrismaModule } from './global/prisma/prisma.module';
+import { EmailModule } from './module/email/email.module';
+import { ConfigModule } from '@nestjs/config';
+import { envValidationSchema } from './config/env.validation';
+import appConfig from './config/app.config';
+import dbConfig from './config/db.config';
+import redisConfig from './config/redis.config';
+import emailConfig from './config/email.config';
+import { LoggerModule } from 'nestjs-pino';
+import { ThrottlerModule } from '@nestjs/throttler';
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      validationSchema: envValidationSchema,
+      expandVariables: true,
+    }),
+    ConfigModule.forFeature(appConfig),
+    ConfigModule.forFeature(dbConfig),
+    ConfigModule.forFeature(redisConfig),
+    ConfigModule.forFeature(emailConfig),
+
+    LoggerModule.forRoot({
+      pinoHttp: {
+        transport:
+          process.env.NODE_ENV === 'development'
+            ? { target: 'pino-pretty' }
+            : undefined,
+        autoLogging: true,
+      },
+    }),
+
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]), // sensible defaults
+
+    PrismaModule,
+    EmailModule,
+  ],
+  controllers: [AppController],
+  providers: [AppService],
+})
+export class AppModule {}
