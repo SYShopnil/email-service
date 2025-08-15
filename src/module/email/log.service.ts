@@ -46,50 +46,6 @@ export class LogService {
     }
   }
 
-  // async getLogs(page = 1, limit = 10) {
-  //   try {
-  //     const skip = (page - 1) * limit;
-  //     const [items, total] = await this.prisma.$transaction([
-  //       this.prisma.emailLog.findMany({
-  //         orderBy: { createdAt: 'desc' },
-  //         skip,
-  //         take: limit,
-  //       }),
-  //       this.prisma.emailLog.count(),
-  //     ]);
-
-  //     const start = new Date();
-  //     start.setHours(0, 0, 0, 0);
-  //     const end = new Date();
-  //     end.setHours(23, 59, 59, 999);
-
-  //     const [sentToday, failedToday, totalCreatedToday] =
-  //       await this.prisma.$transaction([
-  //         this.prisma.emailLog.count({
-  //           where: { sentAt: { gte: start, lte: end } },
-  //         }),
-  //         this.prisma.emailLog.count({
-  //           where: { failedAt: { gte: start, lte: end } },
-  //         }),
-  //         this.prisma.emailLog.count({
-  //           where: { createdAt: { gte: start, lte: end } },
-  //         }),
-  //       ]);
-
-  //     return {
-  //       pagination: { page, limit, total },
-  //       today: {
-  //         totalEmailsSentToday: totalCreatedToday,
-  //         successful: sentToday,
-  //         failed: failedToday,
-  //       },
-  //       items,
-  //     };
-  //   } catch (err) {
-  //     throw new InternalServerErrorException(err);
-  //   }
-  // }
-
   private getDhakaDayBounds(nowUtc: Date = new Date()): {
     startUtc: Date;
     endUtc: Date;

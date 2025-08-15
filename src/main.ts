@@ -9,7 +9,6 @@ import { ResponseInterceptor } from './common/interceptors/response.interceptor'
 import { NestExpressApplication } from '@nestjs/platform-express';
 
 async function bootstrap() {
-  // const app = await NestFactory.create(AppModule, { bufferLogs: true });
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bufferLogs: true,
   });
