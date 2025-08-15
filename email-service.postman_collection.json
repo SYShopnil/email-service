@@ -1,0 +1,103 @@
+{
+	"info": {
+		"_postman_id": "daa2e9f0-c9b5-49fd-9203-996d93f9b768",
+		"name": "email-service",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+		"_exporter_id": "15104401",
+		"_collection_link": "https://www.postman.com/red-trinity-151066/workspace/task-work-space/collection/15104401-daa2e9f0-c9b5-49fd-9203-996d93f9b768?action=share&source=collection_link&creator=15104401"
+	},
+	"item": [
+		{
+			"name": "email",
+			"item": [
+				{
+					"name": "sent-email",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"to\": \"anyemail@gmail.com\",\r\n  \"body\": \"hello there!\",\r\n  \"subject\": \"Test Email\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{baseUrl}}/email/send"
+					},
+					"response": []
+				},
+				{
+					"name": "get-log-details",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/email/logs?limit=20&page=1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"email",
+								"logs"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "20"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:300",
+			"type": "string",
+			"disabled": true
+		},
+		{
+			"key": "baseUrl",
+			"value": "http://localhost",
+			"type": "string",
+			"disabled": true
+		},
+		{
+			"key": "baseUrl",
+			"value": "https://email-service-task-ouxg.onrender.com",
+			"type": "string"
+		}
+	]
+}

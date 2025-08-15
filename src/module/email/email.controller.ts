@@ -17,7 +17,7 @@ import { SendEmailDto } from './dtos/send-email.dto';
 import { LogService } from './log.service';
 
 @ApiTags('email')
-@Controller()
+@Controller('email')
 export class EmailController {
   constructor(
     private readonly emailService: EmailService,
