@@ -24,4 +24,6 @@ model EmailLog {
   createdAt     DateTime     @default(now())
   sentAt        DateTime?
   failedAt      DateTime?
+
+  @@unique([id, status])
 }
