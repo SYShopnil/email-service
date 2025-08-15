@@ -25,7 +25,7 @@ async function bootstrap() {
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(new ResponseInterceptor());
 
-  app.set('trust proxy', true); // or 1
+  app.set('trust proxy', true);
   app.useLogger(app.get(Logger));
 
   // Swagger

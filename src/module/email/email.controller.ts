@@ -38,7 +38,7 @@ export class EmailController {
         summary: 'Minimal required fields',
         value: {
           to: 'xyz@example.com',
-          body: 'hello test!',
+          body: 'hello there!',
           subject: 'Test',
         },
       },

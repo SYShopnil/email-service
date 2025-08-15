@@ -3,7 +3,6 @@ import {
   Injectable,
   InternalServerErrorException,
   NotFoundException,
-  // InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
@@ -12,7 +11,7 @@ import { EEmailStatus } from '@prisma/client';
 import { SendEmailDto } from './dtos/send-email.dto';
 import { LogService } from './log.service';
 import { ISendEmailJobData } from './interfaces';
-import { EJobName, EQueueName } from './enum';
+import { EJobName, EQueueName, EUpdateResult } from './enum';
 import nodemailer, { type Transporter } from 'nodemailer';
 import { ConfigType } from '@nestjs/config';
 import emailConfig from '../../config/email.config';
@@ -61,18 +60,30 @@ export class EmailService {
         throw new NotFoundException('Logs Not Created');
       }
       // enqueue job with the logId
-      await this.emailQueue.add(
-        EJobName.SEND,
-        { to: dto.to, subject: dto.subject, body: dto.body, logId: log.id },
-        {
-          attempts: 3,
-          backoff: { type: 'exponential', delay: 3000 },
-          jobId: log.id,
-          removeOnComplete: { age: 3600, count: 1000 },
-          removeOnFail: { age: 86400, count: 1000 },
-        },
-      );
-      console.log(`Email is sent to queue for process to delivery`);
+      try {
+        await this.emailQueue.add(
+          EJobName.SEND,
+          { to: dto.to, subject: dto.subject, body: dto.body, logId: log.id },
+          {
+            attempts: 3,
+            backoff: { type: 'exponential', delay: 3000 },
+            jobId: log.id,
+            removeOnComplete: { age: 3600, count: 1000 },
+            removeOnFail: { age: 86400, count: 1000 },
+          },
+        );
+        console.log(`Email is sent to queue for process to delivery`);
+      } catch (err) {
+        console.log(`Email failed to queue for process to delivery`);
+        console.log(err);
+        await this.logsService.updateLogs(log.id, EUpdateResult.FAILED, {
+          error: err instanceof Error ? err.message : String(err),
+        });
+        throw new InternalServerErrorException(
+          err instanceof Error ? err.message : String(err),
+        );
+      }
+
       return new SuccessResponse({ id: log.id, status: log.status });
     } catch (err) {
       console.log(err);
