@@ -3,7 +3,7 @@ import { IsEmail, IsNotEmpty, IsString, MaxLength } from 'class-validator';
 
 export class SendEmailDto {
   @ApiProperty({
-    description: 'To whom email will be sent',
+    description: 'to whom email will be sent',
     example: 'xyz@gmail.com',
     required: true,
   })
@@ -12,8 +12,8 @@ export class SendEmailDto {
   to!: string;
 
   @ApiProperty({
-    description: 'Email subject',
-    example: 'Any Subject',
+    description: 'email subject',
+    example: 'any subject',
     maxLength: 200,
   })
   @IsString()

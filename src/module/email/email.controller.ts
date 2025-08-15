@@ -4,15 +4,15 @@ import { EmailService } from './email.service';
 import {
   ApiTags,
   ApiQuery,
-  ApiTooManyRequestsResponse,
   ApiBadRequestResponse,
   ApiCreatedResponse,
   ApiBody,
   ApiOperation,
+  ApiInternalServerErrorResponse,
+  ApiNotFoundResponse,
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { SendEmailDto } from './dtos/send-email.dto';
-import { EnqueueEmailResponseDto } from './dtos/enqueue-email-response.dto';
 import { LogService } from './log.service';
 
 @ApiTags('email')
@@ -28,53 +28,79 @@ export class EmailController {
   @ApiOperation({
     summary: 'Queue an email for delivery',
     description:
-      'Enqueues an email to be sent via SMTP (Brevo). Rate limited to **5 requests/minute per IP**.',
+      'Creates a PENDING email log and enqueues the job for sending via the configured queue. Supports both plain text and HTML bodies.',
   })
   @ApiBody({
     type: SendEmailDto,
     required: true,
     examples: {
       minimal: {
-        summary: 'Minimal',
-        value: { to: 'user@example.com', body: 'Hello there!' },
+        summary: 'Minimal required fields',
+        value: {
+          to: 'xyz@example.com',
+          body: 'hello test!',
+          subject: 'Test',
+        },
       },
       fullHtml: {
-        summary: 'With subject + HTML body',
+        summary: 'full email with subject and HTML body',
         value: {
-          to: 'user@example.com',
-          subject: 'Welcome to Ghapfy',
-          body: '<p>Hi 👋 — thanks for joining!</p>',
+          to: 'xyz@example.com',
+          subject: 'Welcome to Task',
+          body: '<p>Hi</p>',
         },
       },
     },
   })
   @ApiCreatedResponse({
-    description: 'Email queued.',
-    type: EnqueueEmailResponseDto,
+    description: 'Email log created and queued successfully.',
     schema: {
       example: {
-        id: 'job_01J7X9Y2Z3ABCDEF',
-        status: 'queued',
-        to: 'user@example.com',
-        subject: 'Welcome to Ghapfy',
-        queuedAt: '2025-08-14T17:22:54.123Z',
+        success: true,
+        message: 'SUCCESS',
+        data: {
+          id: 'job_01J7X9Y2Z3ABCDEF',
+          status: 'PENDING',
+        },
+        errors: null,
       },
     },
   })
   @ApiBadRequestResponse({
-    description: 'Validation error',
+    description:
+      'validation error has request body has invalid or missing fields.',
     schema: {
       example: {
-        statusCode: 400,
-        message: ['to must be an email', 'body should not be empty'],
-        error: 'Bad Request',
+        success: false,
+        message: 'Validation Failed',
+        data: null,
+        errors: [
+          { field: 'to', message: 'to must be an email' },
+          { field: 'body', message: 'body should not be empty' },
+        ],
       },
     },
   })
-  @ApiTooManyRequestsResponse({
-    description: 'Rate limit exceeded',
+  @ApiNotFoundResponse({
+    description: 'log could not  created in the database.',
     schema: {
-      example: { statusCode: 429, message: 'Too Many Requests' },
+      example: {
+        success: false,
+        message: 'Logs Not Created',
+        data: null,
+        errors: null,
+      },
+    },
+  })
+  @ApiInternalServerErrorResponse({
+    description: 'Unexpected error occurred while queuing the email.',
+    schema: {
+      example: {
+        success: false,
+        message: 'Database connection failed',
+        data: null,
+        errors: null,
+      },
     },
   })
   async send(@Body() dto: SendEmailDto) {
