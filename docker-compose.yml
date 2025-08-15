@@ -1,0 +1,60 @@
+version: '3.9'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env.example
+    networks:
+      - email-service
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - '80:80'
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    networks:
+      - email-service
+    restart: unless-stopped
+    depends_on:
+      - app
+
+  # PostgreSQL (latest stable)
+  postgres:
+    image: postgres:17
+    container_name: email-postgres
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: email_service
+    ports:
+      - '5432:5432'
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    networks:
+      - email-service
+
+  # Redis (latest stable)
+  redis:
+    image: redis:7
+    container_name: email-redis
+    volumes:
+      - redis_data:/data
+    networks:
+      - email-service
+
+networks:
+  email-service:
+
+volumes:
+  pg_data:
+  redis_data:
