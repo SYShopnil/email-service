@@ -10,6 +10,7 @@ import {
   ApiOperation,
   ApiInternalServerErrorResponse,
   ApiNotFoundResponse,
+  ApiOkResponse,
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { SendEmailDto } from './dtos/send-email.dto';
@@ -109,8 +110,97 @@ export class EmailController {
   }
 
   @Get('logs')
-  @ApiQuery({ name: 'page', required: false, minimum: 1 })
-  @ApiQuery({ name: 'limit', required: false })
+  @ApiOperation({
+    summary: 'List email logs (page/limit)',
+    description:
+      'Returns a paginated list of email logs ordered by newest first, plus a Dhaka-local "today" summary.',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    example: 1,
+    minimum: 1,
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    example: 20,
+    minimum: 1,
+    maximum: 100,
+  })
+  @ApiOkResponse({
+    description: 'Paginated logs with today summary.',
+    schema: {
+      type: 'object',
+      properties: {
+        pagination: {
+          type: 'object',
+          properties: {
+            page: { type: 'integer', example: 1 },
+            limit: { type: 'integer', example: 20 },
+            total: { type: 'integer', example: 3572 },
+          },
+          required: ['page', 'limit', 'total'],
+        },
+        today: {
+          type: 'object',
+          properties: {
+            totalEmailsSentToday: {
+              type: 'integer',
+              example: 120,
+              description: 'Count of logs created today (Dhaka time).',
+            },
+            successful: { type: 'integer', example: 110 },
+            failed: { type: 'integer', example: 10 },
+          },
+          required: ['totalEmailsSentToday', 'successful', 'failed'],
+        },
+        items: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'string', example: 'clzn6w3t2001x0abcxyz' },
+              to: { type: 'string', example: 'user@example.com' },
+              subject: {
+                type: 'string',
+                nullable: true,
+                example: 'Welcome 🎉',
+              },
+              status: {
+                type: 'string',
+                enum: ['PENDING', 'SENT', 'FAILED'],
+                example: 'SENT',
+              },
+              createdAt: {
+                type: 'string',
+                format: 'date-time',
+                example: '2025-08-15T10:05:12.345Z',
+              },
+              sentAt: {
+                type: 'string',
+                format: 'date-time',
+                nullable: true,
+                example: '2025-08-15T10:05:13.120Z',
+              },
+              failedAt: {
+                type: 'string',
+                format: 'date-time',
+                nullable: true,
+                example: null,
+              },
+              attemptCount: { type: 'integer', example: 1 },
+              errorMessage: { type: 'string', nullable: true, example: null },
+            },
+            required: ['id', 'to', 'status', 'createdAt', 'attemptCount'],
+          },
+        },
+      },
+      required: ['pagination', 'today', 'items'],
+    },
+  })
   async logs(@Query('page') page = 1, @Query('limit') limit = 10) {
     return this.logService.getLogs(+page, +limit);
   }

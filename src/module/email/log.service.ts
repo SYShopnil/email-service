@@ -193,7 +193,7 @@ export class LogService {
       : coreData;
 
     try {
-      // Update only if still PENDING; does not throw if 0 rows match
+      // update only if still PENDING; does not throw if 0 rows match
       const { count } = await this.prisma.emailLog.updateMany({
         where: { id: logId, status: EEmailStatus.PENDING },
         data,
