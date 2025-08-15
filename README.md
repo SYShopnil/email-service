@@ -1,98 +1,248 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Tech-Analytical-LTD’s Queued Email Delivery & Logging Service
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+**NestJS • TypeScript • PostgreSQL (TypeORM/Prisma) • Redis (BullMQ)**
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+Developer-ready backend that exposes two endpoints to **queue emails** and **log every attempt** (success or failure) with timestamps and error details. Designed to meet the TAL assessment requirements and delivery items.
 
-## Description
+---
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Tech Stack
 
-## Project setup
+**Language:** TypeScript
+**Framework:** NestJS
+**Queue:** BullMQ (Redis)
+**Database:** PostgreSQL (works with **Prisma**;
+**Docs:** Swagger
 
-```bash
-$ npm install
+---
+
+## What it does (Key Features)
+
+- **Queue-first email sending**: `POST /email/send` enqueues a job; a worker sends via SMTP (e.g., Brevo).
+- **Complete logging**: Every email has a record with `createdAt`, `sentAt`, `failedAt`, `status`, and `errorMessage` (if any).
+- **Daily rollups**: `GET /email/logs` returns paginated logs plus **today’s** stats: total created, sent, and failed.
+- **Resilient retries**: Worker retries failed jobs up to a configurable max attempt.
+- **Rate limiting (optional)**, **request/response console logging (optional)**, **Docker support (optional)**.
+
+> End-to-end flow (middleware/guards → rate limit → DTO validation → controller → service → DB log → enqueue → worker → SMTP → DB status updates) mirrors the assessment’s desired behavior.&#x20;
+
+---
+
+## API Flow (High Level)
+
+**Phase 1 — Request Path (`POST /email/send`):**
+Middleware & Guards → Route Rate Limit → DTO Validation → Controller → Service
+→ **Create PENDING log** → **Enqueue job** → `201 Created (PENDING)` if enqueued, else mark **FAILED**.
+
+**Phase 2 — Worker Path (BullMQ consumer):**
+Pick job → **SMTP send** → on success: update **SENT**; on failure: **retry** (up to max) → finally **FAILED** if still unsuccessful.
+Note: Real SMTP providers often don’t confirm final delivery; a **webhook** can be added to reconcile final status.&#x20;
+
+---
+
+## Endpoints (API Reference)
+
+### 1) Send Email
+
+```http
+POST /email/send
+Content-Type: application/json
 ```
 
-## Compile and run the project
+**Body**
 
-```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+```json
+{
+  "to": "person@example.com",
+  "subject": "Hello from TAL",
+  "body": "Queued delivery test"
+}
 ```
 
-## Run tests
+**201 Created (Pending)**
 
-```bash
-# unit tests
-$ npm run test
+- Creates a PENDING row and enqueues a BullMQ job.
 
-# e2e tests
-$ npm run test:e2e
+### 2) Get Email Logs (with Today’s Summary)
 
-# test coverage
-$ npm run test:cov
+```http
+GET /email/logs?page=1&limit=10
 ```
 
-## Deployment
+**Response Includes**
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+- `items[]`: `to`, `subject`, `status`, `createdAt`, `sentAt`, `failedAt`, `errorMessage`
+- `pagination`: `page`, `limit`, `total`
+- `today`: `{ totalEmailsSentToday, successful, failed }`
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+_Scalability note:_ lists default to offset pagination; for high-traffic, switch to **cursor pagination** (return a cursor = last item id, and fetch records created before that on subsequent calls).&#x20;
+
+---
+
+## Run Locally
+
+Clone the project
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+git clone <your-repo-url>
+cd <repo-folder>
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+Install dependencies (Development)
 
-## Resources
+```bash
+npm install
+```
 
-Check out a few resources that may come in handy when working with NestJS:
+Create .env
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+```bash
+cp .env.example .env
+```
+
+Generate/Run (choose your ORM flow)
+
+**If using Prisma**
+
+```bash
+npx prisma generate
+npx prisma migrate dev --name init
+npm run start:dev
+```
+
+Production build & start
+
+```bash
+npm run build
+npm run start
+```
+
+---
+
+Test build & start (With Docker)
+
+```bash
+docker compose up -d --build
+
+```
+
+---
+
+## Environment Variables
+
+**Server**
+
+- `APP_PORT` — API port (e.g., `3030`)
+
+**Database (PostgreSQL)**
+
+- `DATABASE_URL` — `postgresql://postgres:<db-host-password>@localhost:5432/<db-name>?schema=public`
+
+**Queue/Redis**
+
+- `REDIS_HOST` — e.g., `localhost`
+- `REDIS_PORT` — e.g., `6379`
+- `REDIS_PASSWORD` — e.g., `<redis-password>`
+
+**SMTP**
+
+- `SMTP_HOST` — e.g., `smtp-relay.brevo.com`
+- `SMTP_PORT` — e.g., `587`
+- `SMTP_SECURE` — `false` (for 587)
+- `SMTP_USER` — SMTP username
+- `SMTP_PASS` — SMTP password
+
+**(Environment)**
+
+- `NODE_ENV` — SMTP password eg: development, production
+
+---
+
+## ERD Diagram
+
+```
+EmailLog
+  id (uuid, pk)
+  to (text)
+  subject (text)
+  body (text)
+  status (enum: PENDING | SENT | FAILED)
+  errorMessage (text, nullable)
+  createdAt (timestamp)
+  sentAt (timestamp, nullable)
+  failedAt (timestamp, nullable)
+```
+
+## Use Case Diagram
+
+- **Client** calls `POST /email/send` → system enqueues and responds quickly.
+- **Worker** sends via SMTP → updates DB status and timestamps.
+- **Client** calls `GET /email/logs` → sees paginated all logs and today’s summary.
+
+---
+
+## Swagger
+
+- Local: `http://localhost:<PORT>/docs`
+- Docker local: `http://localhost/docs`
+- Live: `https://email-service-task-ouxg.onrender.com/docs`
+- (Add your deployed link here)
+
+---
+
+## Docker (optional)
+
+`Dockerfile` + `docker-compose.yml` can run APP, Postgres, NGINX and Redis locally:
+
+- `app` (NestJS)
+- `postgres`
+- `redis`
+- `nginx`
+
+---
+
+## Design Rationale (Deliverables)
+
+### Why PostgreSQL?
+
+- Email logs are **highly structured** and require **strong consistency** for status + timestamps. PostgreSQL is a **balanced relational DB** with ACID guarantees, ideal for transactional integrity and reliable queries on time-series log rows. (Assessment allows PostgreSQL or MongoDB; this project picks PostgreSQL.)[^ref-db]
+
+[^ref-db]: [`requirement/email-service-api-design.pdf`](./requirement/email-service-api-design.pdf)
+
+### Is it scalable?
+
+- **Yes**, for typical to high throughput:
+  - **Queue decoupling** (HTTP → BullMQ → Worker) smooths spikes and isolates SMTP latency.
+  - **Stateless API**: horizontal scale behind a load balancer.
+  - **Efficient reads**: pagination + indexes; switch to **cursor pagination** under heavy load.
+  - **Background retries**: configurable attempts reduce transient SMTP issues.
+  - **Further scaling**: read replicas for reporting; webhook integration for final delivery confirmation if the SMTP provider supports it. [^ref]
+
+[^ref]: [`requirement/email-service-api-design.pdf`](./requirement/email-service-api-design.pdf)
+
+## Assessment Mapping
+
+- **Endpoints**: `POST /send` (aka `/email/send` in this codebase) and `GET /logs/email` (aka `/email/logs`).
+- **Queue**: Bull or BullMQ with Redis.
+- **DB**: PostgreSQL (Prisma/TypeORM supported).
+- **Logs include**: today’s totals (created/sent/failed), timestamps, error details.
+- **Bonus**: rate limiting, console logging, Docker.
+- **Deliverables**: public repo, Postman docs, `.env` (secrets for local run), brief system design (above) [^ref-system-design]
+
+[^ref-system-design]: [`requirement/email-service-api-design.pdf`](./requirement/email-service-api-design.pdf)
+
+---
+
+## Postman Collection
+
+- File (at repo root): [email-service.postman_collection.json](./email-service.postman_collection.json)
+- Import steps:
+  1. Open Postman → **Import**
+  2. Choose **File** and select `email-service.postman_collection.json`
+  3. (Optional) Create an Environment with:
+     - `baseUrl` = `http://localhost:<PORT>`
+  4. Run requests (they use `{{baseUrl}}` so switching environments is easy)
 
 ## Support
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+For support, email **[sadmanishopnil@gmail.com](mailto:sadmanishopnil@gmail.com)**. t
