@@ -27,10 +27,7 @@ import { APP_GUARD } from '@nestjs/core';
 
     LoggerModule.forRoot({
       pinoHttp: {
-        transport:
-          process.env.NODE_ENV === 'development'
-            ? { target: 'pino-pretty' }
-            : undefined,
+        transport: { target: 'pino-pretty' },
         autoLogging: true,
       },
     }),

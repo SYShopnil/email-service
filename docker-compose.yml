@@ -1,23 +1,24 @@
 version: '3.9'
 
+name: email-service-app
 services:
   app:
     build:
       context: .
       dockerfile: Dockerfile
     env_file:
-      - .env.example
+      - .docker.env
+    container_name: app
     networks:
       - email-service
     restart: unless-stopped
     depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      - postgres
+      - redis
 
   nginx:
     image: nginx:latest
+    container_name: app-nginx
     ports:
       - '80:80'
     volumes:
@@ -31,7 +32,7 @@ services:
   # PostgreSQL (latest stable)
   postgres:
     image: postgres:17
-    container_name: email-postgres
+    container_name: app-db
     environment:
       POSTGRES_USER: app
       POSTGRES_PASSWORD: app
@@ -46,7 +47,7 @@ services:
   # Redis (latest stable)
   redis:
     image: redis:7
-    container_name: email-redis
+    container_name: app-cache-server
     volumes:
       - redis_data:/data
     networks:
