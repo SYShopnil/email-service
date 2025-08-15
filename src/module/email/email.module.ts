@@ -5,7 +5,7 @@ import { PrismaModule } from '../../global/prisma/prisma.module';
 import redisConfig from '../../config/redis.config';
 import emailConfig from '../../config/email.config';
 import { EmailService } from './email.service';
-import { EmailProcessor } from './queues/email.processor/email.processor';
+import { EmailProcessor } from './queues/email.processor';
 import { EmailController } from './email.controller';
 import { LogService } from './log.service';
 import { EQueueName } from './enum';

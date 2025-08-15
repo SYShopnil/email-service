@@ -1,11 +1,11 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { Injectable } from '@nestjs/common';
-import { EQueueName, EUpdateResult } from '../../enum';
-import { EJobName } from '../../enum';
-import { IEmailJob, IUpdateOptions } from '../../interfaces';
-import { EmailService } from '../../email.service';
-import { LogService } from '../../log.service';
+import { EQueueName, EUpdateResult } from '../enum';
+import { EJobName } from '../enum';
+import { IEmailJob, IUpdateOptions } from '../interfaces';
+import { EmailService } from '../email.service';
+import { LogService } from '../log.service';
 
 @Injectable()
 @Processor(EQueueName.EMAIL)

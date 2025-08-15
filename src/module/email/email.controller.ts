@@ -82,7 +82,7 @@ export class EmailController {
     return this.emailService.enqueueEmail(dto);
   }
 
-  @Get('logs/email')
+  @Get('logs')
   @ApiQuery({ name: 'page', required: false, minimum: 1 })
   @ApiQuery({ name: 'limit', required: false })
   async logs(@Query('page') page = 1, @Query('limit') limit = 10) {

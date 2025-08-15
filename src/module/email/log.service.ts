@@ -58,7 +58,6 @@ export class LogService {
         this.prisma.emailLog.count(),
       ]);
 
-      // Today’s summary (counts by sent/failed timestamps)
       const start = new Date();
       start.setHours(0, 0, 0, 0);
       const end = new Date();
@@ -87,7 +86,6 @@ export class LogService {
         items,
       };
     } catch (err) {
-      //TODO:Error handling
       throw new InternalServerErrorException(err);
     }
   }
