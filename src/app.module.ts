@@ -10,7 +10,8 @@ import dbConfig from './config/db.config';
 import redisConfig from './config/redis.config';
 import emailConfig from './config/email.config';
 import { LoggerModule } from 'nestjs-pino';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -40,6 +41,6 @@ import { ThrottlerModule } from '@nestjs/throttler';
     EmailModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}

@@ -1,4 +1,4 @@
-import { EEmailStatus, EmailLog, Prisma } from '@prisma/client';
+import { EEmailStatus, Prisma } from '@prisma/client';
 import { SendEmailDto } from '../dtos/send-email.dto';
 
 export interface ICreateLogs
@@ -17,11 +17,6 @@ export interface IEmailJob
   extends Pick<SendEmailDto, 'to' | 'subject' | 'body'> {
   logId: string;
 }
-
-export type TLogUpdate = Pick<
-  EmailLog,
-  'id' | 'status' | 'sentAt' | 'failedAt' | 'attemptCount'
->;
 
 export interface IUpdateOptions {
   to?: string;

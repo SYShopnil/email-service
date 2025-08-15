@@ -78,6 +78,7 @@ export class EmailController {
     },
   })
   async send(@Body() dto: SendEmailDto) {
+    console.log(`Make a request for sent a new email`);
     return this.emailService.enqueueEmail(dto);
   }
 

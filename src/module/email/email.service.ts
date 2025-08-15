@@ -1,6 +1,8 @@
 import {
   Inject,
   Injectable,
+  InternalServerErrorException,
+  NotFoundException,
   // InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
@@ -16,6 +18,8 @@ import { ConfigType } from '@nestjs/config';
 import emailConfig from '../../config/email.config';
 import type SMTPTransport from 'nodemailer/lib/smtp-transport';
 import type Mail from 'nodemailer/lib/mailer';
+import { SuccessResponse } from '../../common/responses/success.response';
+import { TSentEmailResponse } from './types';
 
 @Injectable()
 export class EmailService {
@@ -23,6 +27,7 @@ export class EmailService {
     SMTPTransport.SentMessageInfo,
     SMTPTransport.Options
   >;
+
   constructor(
     @InjectQueue(EQueueName.EMAIL)
     private readonly emailQueue: Queue<ISendEmailJobData>,
@@ -41,7 +46,9 @@ export class EmailService {
     this.transporter = nodemailer.createTransport(options);
   }
 
-  async enqueueEmail(dto: SendEmailDto) {
+  async enqueueEmail(
+    dto: SendEmailDto,
+  ): Promise<SuccessResponse<TSentEmailResponse>> {
     try {
       const log = await this.logsService.createLogs({
         to: dto.to,
@@ -50,7 +57,8 @@ export class EmailService {
         status: EEmailStatus.PENDING,
       });
       if (!log) {
-        //!!TODO: error will thrown
+        console.log(`Log failed to create`);
+        throw new NotFoundException('Logs Not Created');
       }
       // enqueue job with the logId
       await this.emailQueue.add(
@@ -64,10 +72,13 @@ export class EmailService {
           removeOnFail: { age: 86400, count: 1000 },
         },
       );
-      return { id: log.id, status: log.status };
+      console.log(`Email is sent to queue for process to delivery`);
+      return new SuccessResponse({ id: log.id, status: log.status });
     } catch (err) {
-      //!!TODO: error will thrown
       console.log(err);
+      throw new InternalServerErrorException(
+        err instanceof Error ? err.message : String(err),
+      );
     }
   }
 
@@ -77,6 +88,7 @@ export class EmailService {
     error?: unknown;
   }> {
     try {
+      console.log(`Make request for Send Email`);
       const looksLikeHtml = /<\/?[a-z][\s\S]*>/i.test(body);
 
       const mail: Mail.Options = {
@@ -87,6 +99,7 @@ export class EmailService {
       };
       const result: SMTPTransport.SentMessageInfo =
         await this.transporter.sendMail(mail);
+
       return {
         status: true,
         result,

@@ -19,7 +19,9 @@ export class EmailProcessor extends WorkerHost {
 
   async process(job: Job<IEmailJob>): Promise<void> {
     if ((job.name as EJobName) !== EJobName.SEND) return;
-
+    console.log(
+      `Job ${job.id} comes which duty is ${job.name} is attempting ${job.opts.attempts} time`,
+    );
     const { to, subject, body, logId } = job.data;
     const isLastAttempt = job.attemptsMade + 1 >= (job.opts.attempts ?? 1);
 
@@ -27,6 +29,7 @@ export class EmailProcessor extends WorkerHost {
       const res = await this.emailService.sendEmail({ to, subject, body });
 
       if (res.status) {
+        console.log(`Email successfully sent to SMTP server for delivery`);
         await this.logService.updateLogs(logId, EUpdateResult.SENT, {});
         return;
       }
@@ -35,9 +38,13 @@ export class EmailProcessor extends WorkerHost {
       );
     } catch (err) {
       if (isLastAttempt) {
+        console.log(
+          `JOB is in it's last attempt of retry ${job.opts.attempts} times`,
+        );
         const errorPayload: IUpdateOptions = {
           error: String((err as Error)?.message ?? err),
         };
+        console.log(`Start update it and make status as FAILED`);
         await this.logService.updateLogs(
           logId,
           EUpdateResult.FAILED,

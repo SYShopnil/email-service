@@ -29,6 +29,7 @@ export class LogService {
     to,
   }: ICreateLogs): Promise<EmailLog> {
     try {
+      console.log(`Store the log with PENDING status`);
       return await this.prisma.emailLog.create({
         data: {
           to,
@@ -39,8 +40,9 @@ export class LogService {
       });
     } catch (err) {
       console.log(err);
-      //!!TODO need to make error handler
-      throw new InternalServerErrorException(err);
+      throw new InternalServerErrorException(
+        err instanceof Error ? err.message : String(err),
+      );
     }
   }
 
@@ -98,7 +100,7 @@ export class LogService {
     const baseData: Prisma.EmailLogUpdateInput = {
       attemptCount: { increment: 1 },
     };
-
+    console.log(`Update the status to SENT/FAILED is starting`);
     const data: Prisma.EmailLogUpdateInput =
       outcome === EUpdateResult.SENT
         ? { ...baseData, status: EEmailStatus.SENT, sentAt: new Date() }
@@ -113,10 +115,11 @@ export class LogService {
 
     try {
       // Single-row, atomic update guarded by composite unique (id, status=PENDING)
-      await this.prisma.emailLog.update({
+      const updated = await this.prisma.emailLog.update({
         where: { id_status: { id: logId, status: EEmailStatus.PENDING } },
         data,
       });
+      console.log(`Successfully status has been updated to ${updated.status}`);
 
       return true;
     } catch (err) {
