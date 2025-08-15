@@ -1,13 +1,12 @@
 import {
   Inject,
   Injectable,
-  InternalServerErrorException,
+  // InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 
 import { EEmailStatus } from '@prisma/client';
-import { PrismaService } from '../../global/prisma/prisma.service';
 import { SendEmailDto } from './dtos/send-email.dto';
 import { LogService } from './log.service';
 import { ISendEmailJobData } from './interfaces';
@@ -27,16 +26,15 @@ export class EmailService {
   constructor(
     @InjectQueue(EQueueName.EMAIL)
     private readonly emailQueue: Queue<ISendEmailJobData>,
-
-    private readonly prisma: PrismaService,
-    private readonly logsService: LogService,
     @Inject(emailConfig.KEY)
     private readonly cfg: ConfigType<typeof emailConfig>,
+
+    private readonly logsService: LogService,
   ) {
     const options: SMTPTransport.Options = {
       host: this.cfg.smtp.host,
       port: this.cfg.smtp.port,
-      secure: this.cfg.smtp.secure, // false for 587 (STARTTLS)
+      secure: this.cfg.smtp.secure,
       auth: { user: this.cfg.smtp.user, pass: this.cfg.smtp.pass },
       requireTLS: true,
     };
@@ -57,8 +55,14 @@ export class EmailService {
       // enqueue job with the logId
       await this.emailQueue.add(
         EJobName.SEND,
-        { to: dto.to, subject: dto.subject, body: dto.body },
-        { attempts: 3, backoff: { type: 'exponential', delay: 3000 } },
+        { to: dto.to, subject: dto.subject, body: dto.body, logId: log.id },
+        {
+          attempts: 3,
+          backoff: { type: 'exponential', delay: 3000 },
+          jobId: log.id,
+          removeOnComplete: { age: 3600, count: 1000 },
+          removeOnFail: { age: 86400, count: 1000 },
+        },
       );
       return { id: log.id, status: log.status };
     } catch (err) {
@@ -67,66 +71,32 @@ export class EmailService {
     }
   }
 
-  // async getLogs(page = 1, limit = 10) {
-  //   const skip = (page - 1) * limit;
-  //   const [items, total] = await this.prisma.$transaction([
-  //     this.prisma.emailLog.findMany({
-  //       orderBy: { createdAt: 'desc' },
-  //       skip,
-  //       take: limit,
-  //     }),
-  //     this.prisma.emailLog.count(),
-  //   ]);
-
-  //   // Today’s summary (counts by sent/failed timestamps)
-  //   const start = new Date();
-  //   start.setHours(0, 0, 0, 0);
-  //   const end = new Date();
-  //   end.setHours(23, 59, 59, 999);
-
-  //   const [sentToday, failedToday, totalCreatedToday] =
-  //     await this.prisma.$transaction([
-  //       this.prisma.emailLog.count({
-  //         where: { sentAt: { gte: start, lte: end } },
-  //       }),
-  //       this.prisma.emailLog.count({
-  //         where: { failedAt: { gte: start, lte: end } },
-  //       }),
-  //       this.prisma.emailLog.count({
-  //         where: { createdAt: { gte: start, lte: end } },
-  //       }),
-  //     ]);
-
-  //   return {
-  //     pagination: { page, limit, total },
-  //     today: {
-  //       totalEmailsSentToday: totalCreatedToday,
-  //       successful: sentToday,
-  //       failed: failedToday,
-  //     },
-  //     items,
-  //   };
-  // }
-
-  async sendEmail({
-    to,
-    subject,
-    body,
-  }: ISendEmailJobData): Promise<SMTPTransport.SentMessageInfo> {
+  async sendEmail({ to, subject, body }: ISendEmailJobData): Promise<{
+    status: boolean;
+    result?: SMTPTransport.SentMessageInfo;
+    error?: unknown;
+  }> {
     try {
       const looksLikeHtml = /<\/?[a-z][\s\S]*>/i.test(body);
 
       const mail: Mail.Options = {
-        from: this.cfg.smtp.user, // ensure this matches the authenticated user for Zoho
+        from: this.cfg.smtp.user,
         to,
         subject,
         ...(looksLikeHtml ? { html: body } : { text: body }),
       };
-
-      return this.transporter.sendMail(mail);
+      const result: SMTPTransport.SentMessageInfo =
+        await this.transporter.sendMail(mail);
+      return {
+        status: true,
+        result,
+      };
     } catch (err) {
       console.log(err);
-      throw new InternalServerErrorException(err);
+      return {
+        status: false,
+        error: err,
+      };
     }
   }
 }

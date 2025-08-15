@@ -5,3 +5,7 @@ export enum EQueueName {
 export enum EJobName {
   SEND = 'SEND',
 }
+export enum EUpdateResult {
+  SENT = 'SENT',
+  FAILED = 'FAILED',
+}

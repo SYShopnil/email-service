@@ -1,0 +1,21 @@
+NODE_ENV=development
+APP_PORT=3000
+
+DATABASE_URL=postgresql://postgres:admin123@localhost:5432/email_svc?schema=public
+
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=
+
+SMTP_HOST=smtp-relay.brevo.com
+SMTP_PORT=587
+SMTP_USER=94c0ba001@smtp-brevo.com      # your Brevo SMTP “Login”
+SMTP_PASS=fPEagvHLFx5cO0BR          # the masked value shown
+SMTP_SECURE=false
+
+
+SMTP_HOST=smtp.zoho.com
+SMTP_PORT=587
+SMTP_USER=admin@ghapfy.com
+SMTP_PASS=YOUR_ZOHO_PASSWORD_OR_APP_PASSWORD
+SMTP_SECURE=false 

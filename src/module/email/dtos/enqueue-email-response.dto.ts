@@ -2,13 +2,13 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class EnqueueEmailResponseDto {
-  @ApiProperty({ example: 'job_01J7X9Y2Z3ABCDEF' })
+  @ApiProperty({ example: 'sdfjsdlakfjlk;sdjflksdjfl;sjdf' })
   id!: string;
 
   @ApiProperty({ example: 'queued' })
   status!: 'queued';
 
-  @ApiProperty({ example: 'user@example.com' })
+  @ApiProperty({ example: 'demo@example.com' })
   to!: string;
 
   @ApiPropertyOptional({ example: 'Welcome to Ghapfy' })
