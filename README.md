@@ -214,6 +214,15 @@ EmailLog
   - **Background retries**: configurable attempts reduce transient SMTP issues. [^ref-system-design]
   - **Further scaling**: read replicas for reporting; webhook integration for final delivery confirmation if the SMTP provider supports it. [^ref-system-design]
 
+## More Scalability (from the design doc) [^ref-system-design]
+
+- **Redis → Cluster + rate limits**; cap per-provider concurrency to protect SMTP and avoid thundering herds.
+- **Idempotency + Outbox** to prevent duplicate sends under retries/replays; ensure at-least-once delivery.
+- **PostgreSQL**: monthly partitions, `(status, created_at)` indexes, and PgBouncer for connection pooling.
+- **Reads at scale**: move to **cursor pagination**; use read replicas/materialized views for dashboards.
+- **Cache “today’s totals”** (10–30s TTL) to cut repeated aggregates.
+- **Observe & alert**: queue depth, retries, DLQ size, provider error rate, and replica lag.
+
 ## Assessment Mapping [^ref-task]
 
 - **Endpoints**: `POST /send` (aka `/email/send` in this codebase) and `GET /logs/email` (aka `/email/logs`). [^ref-task]
