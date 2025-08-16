@@ -24,11 +24,11 @@ Developer-ready backend that exposes two endpoints to **queue emails** and **log
 - **Resilient retries**: Worker retries failed jobs up to a configurable max attempt. [^ref-system-design]
 - **Rate limiting (optional)**, **request/response console logging (optional)**, [^ref-system-design]**Docker support (optional)**. [^ref-system-design]
 
-> End-to-end flow (middleware/guards → rate limit → DTO validation → controller → service → DB log → enqueue → worker → SMTP → DB status updates) mirrors the assessment’s desired behavior.&#x20;
+> End-to-end flow of sent email: (middleware/guards → rate limit → DTO validation → controller → service → DB log → enqueue → worker → SMTP → DB status updates) mirrors the assessment’s desired behavior.&#x20;
 
 ---
 
-## API Flow (High Level) [^ref-system-design]
+## API Flow (Sent Email) [^ref-system-design]
 
 **Phase 1 — Request Path (`POST /email/send`):**
 Middleware & Guards → Route Rate Limit → DTO Validation → Controller → Service
@@ -225,7 +225,7 @@ EmailLog
 
 ## More Scalability (from the design doc) [^ref-system-design]
 
-- \***\*webhook**: integration for final delivery confirmation if the SMTP provider supports it; [^ref-system-design]
+- **webhook**: integration for final delivery confirmation if the SMTP provider supports it; [^ref-system-design]
 - **PostgreSQL**: monthly partitions, `(status, created_at)` indexes, and PgBouncer for connection pooling. [^ref-system-design]
 - **Cache** implement caching layer to avoid unnecessary db pool connection (during create a new log time). [^ref-system-design]
 
