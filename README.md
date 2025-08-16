@@ -18,25 +18,25 @@ Developer-ready backend that exposes two endpoints to **queue emails** and **log
 
 ## What it does (Key Features)
 
-- **Queue-first email sending**: `POST /email/send` enqueues a job; a worker sends via SMTP (e.g., Brevo).
-- **Complete logging**: Every email has a record with `createdAt`, `sentAt`, `failedAt`, `status`, and `errorMessage` (if any).
-- **Daily rollups**: `GET /email/logs` returns paginated logs plus **today’s** stats: total created, sent, and failed.
-- **Resilient retries**: Worker retries failed jobs up to a configurable max attempt.
-- **Rate limiting (optional)**, **request/response console logging (optional)**, **Docker support (optional)**.
+- **Queue-first email sending**: `POST /email/send` enqueues a job; a worker sends via SMTP (e.g., Brevo). [^ref-system-design]
+- **Complete logging**: Every email has a record with `createdAt`, `sentAt`, `failedAt`, `status`, and `errorMessage` (if any). [^ref-system-design]
+- **Daily rollups**: `GET /email/logs` returns paginated logs plus **today’s** stats: total created, sent, and failed. [^ref-system-design]
+- **Resilient retries**: Worker retries failed jobs up to a configurable max attempt. [^ref-system-design]
+- **Rate limiting (optional)**, **request/response console logging (optional)**, [^ref-system-design]**Docker support (optional)**. [^ref-system-design]
 
 > End-to-end flow (middleware/guards → rate limit → DTO validation → controller → service → DB log → enqueue → worker → SMTP → DB status updates) mirrors the assessment’s desired behavior.&#x20;
 
 ---
 
-## API Flow (High Level)
+## API Flow (High Level) [^ref-system-design]
 
 **Phase 1 — Request Path (`POST /email/send`):**
 Middleware & Guards → Route Rate Limit → DTO Validation → Controller → Service
-→ **Create PENDING log** → **Enqueue job** → `201 Created (PENDING)` if enqueued, else mark **FAILED**.
+→ **Create PENDING log** → **Enqueue job** → `201 Created (PENDING)` if enqueued, else mark **FAILED**. [^ref-system-design]
 
 **Phase 2 — Worker Path (BullMQ consumer):**
 Pick job → **SMTP send** → on success: update **SENT**; on failure: **retry** (up to max) → finally **FAILED** if still unsuccessful.
-Note: Real SMTP providers often don’t confirm final delivery; a **webhook** can be added to reconcile final status.&#x20;
+Note: Real SMTP providers often don’t confirm final delivery; a **webhook** can be added to reconcile final status.&#x20; [^ref-system-design]
 
 ---
 
@@ -63,7 +63,7 @@ Content-Type: application/json
 
 - Creates a PENDING row and enqueues a BullMQ job.
 
-### 2) Get Email Logs (with Today’s Summary)
+### 2) Get Email Logs (with Today’s Summary) [^ref-system-design]
 
 ```http
 GET /email/logs?page=1&limit=10
@@ -173,7 +173,7 @@ EmailLog
   failedAt (timestamp, nullable)
 ```
 
-## Use Case Diagram
+## Use Case Diagram [^ref-system-design]
 
 - **Client** calls `POST /email/send` → system enqueues and responds quickly.
 - **Worker** sends via SMTP → updates DB status and timestamps.
@@ -202,29 +202,28 @@ EmailLog
 
 ## Design Rationale (Deliverables)
 
-### Why PostgreSQL?
+### Why PostgreSQL? [^ref-system-design]
 
 - Email logs are **highly structured** and require **strong consistency** for status + timestamps. PostgreSQL is a **balanced relational DB** with ACID guarantees, ideal for transactional integrity and reliable queries on time-series log rows. (Assessment allows PostgreSQL or MongoDB; this project picks PostgreSQL.)[^ref-system-design]
 
-### Is it scalable?
+### Is it scalable? [^ref-system-design]
 
 - **Yes**, for typical to high throughput:
-  - **Queue decoupling** (HTTP → BullMQ → Worker) smooths spikes and isolates SMTP latency.
-  - **Stateless API**: horizontal scale behind a load balancer.
-  - **Efficient reads**: pagination + indexes; switch to **cursor pagination** under heavy load.
-  - **Background retries**: configurable attempts reduce transient SMTP issues.
+  - **Queue decoupling** (HTTP → BullMQ → Worker) smooths spikes and isolates SMTP latency. [^ref-system-design]
+  - **Efficient reads**: pagination + indexes; switch to **cursor pagination** under heavy load. [^ref-system-design]
+  - **Background retries**: configurable attempts reduce transient SMTP issues. [^ref-system-design]
   - **Further scaling**: read replicas for reporting; webhook integration for final delivery confirmation if the SMTP provider supports it. [^ref-system-design]
 
-## Assessment Mapping
+## Assessment Mapping [^ref-system-design]
 
-- **Endpoints**: `POST /send` (aka `/email/send` in this codebase) and `GET /logs/email` (aka `/email/logs`).
-- **Queue**: Bull or BullMQ with Redis.
-- **DB**: PostgreSQL (Prisma/TypeORM supported).
-- **Logs include**: today’s totals (created/sent/failed), timestamps, error details.
-- **Bonus**: rate limiting, console logging, Docker.
+- **Endpoints**: `POST /send` (aka `/email/send` in this codebase) and `GET /logs/email` (aka `/email/logs`). [^ref-system-design]
+- **Queue**: Bull or BullMQ with Redis. [^ref-system-design]
+- **DB**: PostgreSQL (Prisma/TypeORM supported). [^ref-system-design]
+- **Logs include**: today’s totals (created/sent/failed), timestamps, error details. [^ref-system-design]
+- **Bonus**: rate limiting, console logging, Docker. [^ref-system-design]
 - **Deliverables**: public repo, Postman docs, `.env` (secrets for local run), brief system design (above) [^ref-system-design]
 
-[^ref-system-design]: [`requirement/email-service-api-design.pdf`](./requirement/email-service-api-design.pdf)
+[^ref-system-design]: [`System-Design`](https://github.com/SYShopnil/requirement/blob/master/email-service-api-design.pdf)
 
 ---
 
