@@ -217,20 +217,20 @@ EmailLog
 
 ### Is it scalable? [^ref-system-design]
 
-- **Yes**, for typical to high throughput:
+- **Yes**, for moderate traffic but need to scalable more for heavier: [^ref-system-design]
   - **Queue decoupling** (HTTP → BullMQ → Worker) smooths spikes and isolates SMTP latency. [^ref-system-design]
-  - **Efficient reads**: pagination + indexes; switch to **cursor pagination** under heavy load. [^ref-system-design]
+  - **Efficient reads**: pagination + indexes; switch to **cursor pagination**, \*\*transaction under Repeatable Read isolation layer under heavy load. [^ref-system-design]
   - **Background retries**: configurable attempts reduce transient SMTP issues. [^ref-system-design]
-  - **Further scaling**: read replicas for reporting; webhook integration for final delivery confirmation if the SMTP provider supports it. [^ref-system-design]
+  - **Further scaling**: read replicas for reporting; webhook integration for final delivery confirmation if the SMTP provider supports it; switch read api to full transaction under Repeatable Read isolation layer; implement caching layer to avoid unnecessary db pool connection. [^ref-system-design]
 
 ## More Scalability (from the design doc) [^ref-system-design]
 
-- **Redis → Cluster + rate limits**; cap per-provider concurrency to protect SMTP and avoid thundering herds.
 - **Idempotency + Outbox** to prevent duplicate sends under retries/replays; ensure at-least-once delivery.
 - **PostgreSQL**: monthly partitions, `(status, created_at)` indexes, and PgBouncer for connection pooling.
-- **Reads at scale**: move to **cursor pagination**; use read replicas/materialized views for dashboards.
 - **Cache “today’s totals”** (10–30s TTL) to cut repeated aggregates.
 - **Observe & alert**: queue depth, retries, DLQ size, provider error rate, and replica lag.
+
+-- **Read the doc to get full idea** [^ref-system-design]
 
 ## Assessment Mapping [^ref-task]
 
@@ -240,6 +240,8 @@ EmailLog
 - **Logs include**: today’s totals (created/sent/failed), timestamps, error details. [^ref-task]
 - **Bonus**: rate limiting, console logging, Docker. [^ref-task]
 - **Deliverables**: public repo, Postman docs, `.env` (secrets for local run), brief system design (above) [^ref-task]
+
+## References
 
 [^ref-system-design]: [`System-Design`](https://github.com/SYShopnil/email-service/blob/master/requirement/email-service-api-design.pdf)
 
