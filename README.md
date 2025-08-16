@@ -221,14 +221,12 @@ EmailLog
   - **Queue decoupling** (HTTP → BullMQ → Worker) smooths spikes and isolates SMTP latency. [^ref-system-design]
   - **Efficient reads**: pagination + indexes; switch to **cursor pagination**, \*\*transaction under Repeatable Read isolation layer under heavy load. (already did) [^ref-system-design]
   - **Background retries**: configurable attempts reduce transient SMTP issues. [^ref-system-design]
-  - **Further scaling**: read replicas for reporting; webhook integration for final delivery confirmation if the SMTP provider supports it; switch read api to full transaction under Repeatable Read isolation layer(already did); implement caching layer to avoid unnecessary db pool connection. [^ref-system-design]
 
 ## More Scalability (from the design doc) [^ref-system-design]
 
-- **Idempotency + Outbox** to prevent duplicate sends under retries/replays; ensure at-least-once delivery.
-- **PostgreSQL**: monthly partitions, `(status, created_at)` indexes, and PgBouncer for connection pooling.
-- **Cache “today’s totals”** (10–30s TTL) to cut repeated aggregates.
-- **Observe & alert**: queue depth, retries, DLQ size, provider error rate, and replica lag.
+- \***\*webhook**: integration for final delivery confirmation if the SMTP provider supports it; [^ref-system-design]
+- **PostgreSQL**: monthly partitions, `(status, created_at)` indexes, and PgBouncer for connection pooling. [^ref-system-design]
+- **Cache** implement caching layer to avoid unnecessary db pool connection (during create a new log time). [^ref-system-design]
 
 -- **Read the doc to get full idea** [^ref-system-design]
 
