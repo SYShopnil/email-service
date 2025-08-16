@@ -200,7 +200,7 @@ EmailLog
 
 ---
 
-## Design Rationale (Deliverables)
+## Design Rationale (Deliverables) [^ref-task]
 
 ### Why PostgreSQL? [^ref-system-design]
 
@@ -214,16 +214,18 @@ EmailLog
   - **Background retries**: configurable attempts reduce transient SMTP issues. [^ref-system-design]
   - **Further scaling**: read replicas for reporting; webhook integration for final delivery confirmation if the SMTP provider supports it. [^ref-system-design]
 
-## Assessment Mapping [^ref-system-design]
+## Assessment Mapping [^ref-task]
 
-- **Endpoints**: `POST /send` (aka `/email/send` in this codebase) and `GET /logs/email` (aka `/email/logs`). [^ref-system-design]
-- **Queue**: Bull or BullMQ with Redis. [^ref-system-design]
-- **DB**: PostgreSQL (Prisma/TypeORM supported). [^ref-system-design]
-- **Logs include**: today’s totals (created/sent/failed), timestamps, error details. [^ref-system-design]
-- **Bonus**: rate limiting, console logging, Docker. [^ref-system-design]
-- **Deliverables**: public repo, Postman docs, `.env` (secrets for local run), brief system design (above) [^ref-system-design]
+- **Endpoints**: `POST /send` (aka `/email/send` in this codebase) and `GET /logs/email` (aka `/email/logs`). [^ref-task]
+- **Queue**: Bull or BullMQ with Redis. [^ref-task]
+- **DB**: PostgreSQL (Prisma/TypeORM supported). [^ref-task]
+- **Logs include**: today’s totals (created/sent/failed), timestamps, error details. [^ref-task]
+- **Bonus**: rate limiting, console logging, Docker. [^ref-task]
+- **Deliverables**: public repo, Postman docs, `.env` (secrets for local run), brief system design (above) [^ref-task]
 
 [^ref-system-design]: [`System-Design`](https://github.com/SYShopnil/email-service/blob/master/requirement/email-service-api-design.pdf)
+
+[^ref-task]: [`Assessment-Details`](https://github.com/SYShopnil/email-service/blob/master/requirement/email-service-guied.pdf)
 
 ---
 
