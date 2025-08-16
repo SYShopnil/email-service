@@ -154,7 +154,7 @@ docker compose up -d --build
 
 **(Environment)**
 
-- `NODE_ENV` — SMTP password eg: development, production
+- `NODE_ENV` — Deploy environment eg: development, production
 
 ---
 
@@ -186,7 +186,6 @@ EmailLog
 - Local: `http://localhost:<PORT>/docs`
 - Docker local: `http://localhost/docs`
 - Live: `https://email-service-task-ouxg.onrender.com/docs`
-- (Add your deployed link here)
 
 ---
 
@@ -205,9 +204,7 @@ EmailLog
 
 ### Why PostgreSQL?
 
-- Email logs are **highly structured** and require **strong consistency** for status + timestamps. PostgreSQL is a **balanced relational DB** with ACID guarantees, ideal for transactional integrity and reliable queries on time-series log rows. (Assessment allows PostgreSQL or MongoDB; this project picks PostgreSQL.)[^ref-db]
-
-[^ref-db]: [`requirement/email-service-api-design.pdf`](./requirement/email-service-api-design.pdf)
+- Email logs are **highly structured** and require **strong consistency** for status + timestamps. PostgreSQL is a **balanced relational DB** with ACID guarantees, ideal for transactional integrity and reliable queries on time-series log rows. (Assessment allows PostgreSQL or MongoDB; this project picks PostgreSQL.)[^ref-system-design]
 
 ### Is it scalable?
 
@@ -216,9 +213,7 @@ EmailLog
   - **Stateless API**: horizontal scale behind a load balancer.
   - **Efficient reads**: pagination + indexes; switch to **cursor pagination** under heavy load.
   - **Background retries**: configurable attempts reduce transient SMTP issues.
-  - **Further scaling**: read replicas for reporting; webhook integration for final delivery confirmation if the SMTP provider supports it. [^ref]
-
-[^ref]: [`requirement/email-service-api-design.pdf`](./requirement/email-service-api-design.pdf)
+  - **Further scaling**: read replicas for reporting; webhook integration for final delivery confirmation if the SMTP provider supports it. [^ref-system-design]
 
 ## Assessment Mapping
 
