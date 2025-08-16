@@ -241,14 +241,6 @@ EmailLog
 - **Bonus**: rate limiting, console logging, Docker. [^ref-task]
 - **Deliverables**: public repo, Postman docs, `.env` (secrets for local run), brief system design (above) [^ref-task]
 
-## References
-
-[^ref-system-design]: [`System-Design`](https://github.com/SYShopnil/email-service/blob/master/requirement/email-service-api-design.pdf)
-
-[^ref-task]: [`Assessment-Details`](https://github.com/SYShopnil/email-service/blob/master/requirement/email-service-guied.pdf)
-
----
-
 ## Postman Collection
 
 - File (at repo root): [email-service.postman_collection.json](./email-service.postman_collection.json)
@@ -261,4 +253,12 @@ EmailLog
 
 ## Support
 
-For support, email **[sadmanishopnil@gmail.com](mailto:sadmanishopnil@gmail.com)**. t
+For support, email **[sadmanishopnil@gmail.com](mailto:sadmanishopnil@gmail.com)**.
+
+## References
+
+[^ref-system-design]: [`System-Design`](https://github.com/SYShopnil/email-service/blob/master/requirement/email-service-api-design.pdf)
+
+[^ref-task]: [`Assessment-Details`](https://github.com/SYShopnil/email-service/blob/master/requirement/email-service-guied.pdf)
+
+---
