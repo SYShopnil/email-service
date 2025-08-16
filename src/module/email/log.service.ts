@@ -4,7 +4,6 @@ import { PrismaService } from '../../global/prisma/prisma.service';
 import { EEmailStatus, EmailLog, Prisma } from '@prisma/client';
 import { ICreateLogs, IUpdateOptions } from './interfaces';
 import { EUpdateResult } from './enum';
-import { TodayAggRow } from './types';
 
 @Injectable()
 export class LogService {
@@ -86,40 +85,51 @@ export class LogService {
     const { startUtc, endUtc } = this.getDhakaDayBounds();
 
     try {
-      // reads in parallel
-      const [items, total, todayRows] = await Promise.all([
-        this.prisma.emailLog.findMany({
-          orderBy: { createdAt: 'desc' },
-          skip,
-          take: safeLimit,
-          select,
-        }),
-        this.prisma.emailLog.count(),
-        this.prisma.$queryRaw<TodayAggRow[]>`
-        SELECT
-          COUNT(*) FILTER (WHERE "createdAt" >= ${startUtc} AND "createdAt" <= ${endUtc}) AS created,
-          COUNT(*) FILTER (WHERE "sentAt"    >= ${startUtc} AND "sentAt"    <= ${endUtc}) AS sent,
-          COUNT(*) FILTER (WHERE "failedAt"  >= ${startUtc} AND "failedAt"  <= ${endUtc}) AS failed
-        FROM "EmailLog";
-      `,
-      ]);
+      const result = await this.prisma.$transaction(
+        async (tx) => {
+          // run all reads within the same connection & snapshot (for  read time consistency)
+          const [items, total, createdToday, sentToday, failedToday] =
+            await Promise.all([
+              tx.emailLog.findMany({
+                orderBy: { createdAt: 'desc' },
+                skip,
+                take: safeLimit,
+                select,
+              }),
+              tx.emailLog.count(),
+              tx.emailLog.count({
+                where: { createdAt: { gte: startUtc, lte: endUtc } },
+              }),
+              tx.emailLog.count({
+                where: { sentAt: { gte: startUtc, lte: endUtc } },
+              }),
+              tx.emailLog.count({
+                where: { failedAt: { gte: startUtc, lte: endUtc } },
+              }),
+            ]);
 
-      const t = todayRows[0] ?? { created: 0n, sent: 0n, failed: 0n };
-
-      return {
-        pagination: { page: safePage, limit: safeLimit, total },
-        today: {
-          totalEmailsSentToday: Number(t.created),
-          successful: Number(t.sent),
-          failed: Number(t.failed),
+          return {
+            pagination: { page: safePage, limit: safeLimit, total },
+            today: {
+              totalEmailsSentToday: createdToday,
+              successful: sentToday,
+              failed: failedToday,
+            },
+            items,
+          };
         },
-        items,
-      };
+        {
+          isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted, // explicit; Postgres default
+        },
+      );
+
+      return result;
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       throw new InternalServerErrorException(message);
     }
   }
+
   async updateLogs(
     logId: string,
     outcome: EUpdateResult,

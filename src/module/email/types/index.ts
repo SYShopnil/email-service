@@ -4,8 +4,6 @@ import { EEmailStatus } from '@prisma/client';
 
 export type TSentEmailResponse = Pick<EmailLog, 'id' | 'status'>;
 
-export type TodayAggRow = { created: bigint; sent: bigint; failed: bigint };
-
 export type LogListItem = {
   id: string;
   to: string;
