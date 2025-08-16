@@ -8,11 +8,11 @@ Developer-ready backend that exposes two endpoints to **queue emails** and **log
 
 ## Tech Stack
 
-**Language:** TypeScript
-**Framework:** NestJS
-**Queue:** BullMQ (Redis)
-**Database:** PostgreSQL (works with **Prisma**;
-**Docs:** Swagger
+- **Language:** TypeScript
+- **Framework:** NestJS
+- **Queue:** BullMQ (Redis)
+- **Database:** PostgreSQL (works with **Prisma**;
+- **Docs:** Swagger
 
 ---
 
