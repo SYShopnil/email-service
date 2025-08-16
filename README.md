@@ -128,6 +128,10 @@ Test build & start (With Docker)
 
 ```bash
 docker compose up -d --build
+ ||
+npm run dev:up
+
+npm run dev:down
 
 ```
 
