@@ -219,7 +219,8 @@ EmailLog
 
 - **Yes**, for moderate traffic but need to scalable more for heavier: [^ref-system-design]
   - **Queue decoupling** (HTTP → BullMQ → Worker) smooths spikes and isolates SMTP latency. [^ref-system-design]
-  - **Efficient reads**: pagination + indexes; switch to **cursor pagination**, \*\*transaction under Repeatable Read isolation layer under heavy load. (already did) [^ref-system-design]
+  - **Efficient reads**: pagination + indexes; switch to **cursor pagination**,
+  - **transaction**: under Repeatable Read isolation layer under heavy load. (already did) [^ref-system-design]
   - **Background retries**: configurable attempts reduce transient SMTP issues. [^ref-system-design]
 
 ## More Scalability (from the design doc) [^ref-system-design]
