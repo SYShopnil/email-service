@@ -88,6 +88,11 @@ git clone <your-repo-url>
 cd <repo-folder>
 ```
 
+```bash
+git clone https://github.com/SYShopnil/email-service.git
+cd email-service
+```
+
 Install dependencies (Development)
 
 ```bash
