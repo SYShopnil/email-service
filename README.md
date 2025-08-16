@@ -223,7 +223,7 @@ EmailLog
 - **Bonus**: rate limiting, console logging, Docker. [^ref-system-design]
 - **Deliverables**: public repo, Postman docs, `.env` (secrets for local run), brief system design (above) [^ref-system-design]
 
-[^ref-system-design]: [`System-Design`](https://github.com/SYShopnil/requirement/blob/master/email-service-api-design.pdf)
+[^ref-system-design]: [`System-Design`](https://github.com/SYShopnil/email-service/blob/master/requirement/email-service-api-design.pdf)
 
 ---
 
