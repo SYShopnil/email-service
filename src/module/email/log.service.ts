@@ -119,7 +119,7 @@ export class LogService {
           };
         },
         {
-          isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted, // explicit; Postgres default
+          isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
         },
       );
 
