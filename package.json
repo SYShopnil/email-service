@@ -17,7 +17,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "dev:up": "docker compose up -d",
-    "dev:down": "docker compose down -v"
+    "dev:down": "docker compose down"
   },
   "dependencies": {
     "@nestjs/bullmq": "^11.0.3",
